@@ -27,7 +27,9 @@ public class ClassementEquipe_a extends HttpServlet {
             List<Categorie> categories = categorie.AllCategorie(connection);
             List<Equipe> equipes = equipe.AllEquipe(connection);
             List<Classement> classements = classement.classements_group_by_equipe_by_categorie(0 , connection);
+            Categorie cat = categorie.categorie_by_idCategori(0 , connection);
             request.setAttribute("categories" , categories);
+            request.setAttribute("cat" , cat);
             request.setAttribute("equipes" , equipes);
             request.setAttribute("classements" , classements);
             connection.close();
@@ -50,7 +52,9 @@ public class ClassementEquipe_a extends HttpServlet {
                 List<Categorie> categories = categorie.AllCategorie(connection);
                 List<Equipe> equipes = equipe.AllEquipe(connection);
                 List<Classement> classements = classement.classements_group_by_equipe_by_categorie( idCategorie, connection);
+                Categorie cat = categorie.categorie_by_idCategori(idCategorie , connection);
                 request.setAttribute("categories" , categories);
+                request.setAttribute("cat" , cat);
                 request.setAttribute("equipes" , equipes);
                 request.setAttribute("classements" , classements);
             } catch (SQLException | ClassNotFoundException e) {

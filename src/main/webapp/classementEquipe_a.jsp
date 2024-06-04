@@ -3,6 +3,9 @@
 <%@ page import="java.util.List" %>
 <%@ page import="Model.Classement" %>
 <%@ page import="Model.Categorie" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.ArrayList" %>
 <!DOCTYPE html>
 <html lang="en">
 <%
@@ -10,8 +13,16 @@
     List<Equipe> equipes = (List<Equipe>) request.getAttribute("equipes");
     List<Categorie> categories = (List<Categorie>) request.getAttribute("categories");
     List<Classement> classementList = (List<Classement>) request.getAttribute("classements");
+    Categorie cat = (Categorie) request.getAttribute("cat");
+    List<String> equipe = new ArrayList<>();
+    List<String> pt_equipe = new ArrayList<>();
+    for (Classement classement : classementList){
+        equipe.add(classement.getNomEquipe());
+        pt_equipe.add(String.valueOf(classement.getPoint()));
+    }
+    String Data_equipe = "[" + Arrays.stream(equipe.toArray()).map(s -> "'" + s + "'").collect(Collectors.joining(", ")) + "]";
+    String Data_pt_equipe = "[" + String.join(", ", pt_equipe) + "]";
 %>
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -22,7 +33,18 @@
     <title>ULTIMATE TEAM RACE</title>
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/certificate.css">
+    <script src="js/Chart.js"></script>
+    <script type="text/javascript" src="js/html2pdf.bundle.min.js"></script>
+    <script type="text/javascript" src="js/loader.js"></script>
     <link href="css/ruang-admin.min.css" rel="stylesheet">
+    <script src="js/stat.js"></script>
+    <style>
+        #chart {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 
 <body id="page-top">
@@ -55,6 +77,7 @@
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Action</h6>
                     <a class="collapse-item" href="${pageContext.request.contextPath}/VoireEtape_a">Affectation temps</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Penalite">Penalite Equipe</a>
                 </div>
             </div>
         </li>
@@ -87,7 +110,6 @@
                 </div>
             </div>
         </li>
-
         <hr class="sidebar-divider">
         <div class="version" id="version-ruangadmin"></div>
     </ul>
@@ -112,6 +134,48 @@
                 </ul>
             </nav>
             <!-- Topbar -->
+            <%if(classementList.size() != 0 && cat != null){%>
+            <div hidden>
+                <div class="champion" >
+                    <div id="chart_div">
+                        <div class="certificate">
+                            <div class="header_certificate">
+                                <h1>RUNNING</h1>
+                                <h2>CHAMPOIN</h2>
+                            </div>
+                            <div class="medal_certificate">
+                                <img src="img/champion.jpg" alt="Medal" >
+                            </div>
+                            <div class="medal_certificate1">
+                                <img src="img/champion.jpg" alt="Medal" >
+                            </div>
+                            <div class="content_certificate">
+                                <p>This certificate is presented to</p>
+                                <h3><%= classementList.get(0).getNomEquipe()%></h3>
+                                <% if (cat.getIdCategorie() != 0){%>
+                                <p>Equipe champion dans le categorie <%= cat.getNom_Categorie()%></p>
+                                <%}else {%>
+                                <p>Equipe champion dans le categorie Tous</p>
+                                <%}%>
+                            </div>
+                            <div class="footer_certificate">
+                                <div class="date">
+                                    <p>Date</p>
+                                </div>
+                                <div class="stat">
+                                    <p>Distance : <%= classementList.get(0).getLongueur()%></p>
+                                    <p>Temps : <%= classementList.get(0).getDiffTemps()%></p>
+                                    <p>Point : <%= classementList.get(0).getPoint()%> </p>
+                                </div>
+                                <div class="signature">
+                                    <p>Signature</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <%}%>
             <div class="container-fluid" id="container-wrapper">
                 <div class="col-lg-12">
                     <center>
@@ -134,19 +198,60 @@
                                     <button type="submit" class="btn btn-primary" >Voire</button>
                                 </div>
                             </form>
+                        </br> </br>
+                            <button type="submit" class="btn btn-primary" onclick="addPdf('chart_div')">Certificate</button>
                             <%}%>
                         </div>
                     </center>
                 </div>
             </div>
             <%if (classementList.size() != 0){%>
+            <div id="chart">
+                <canvas id="Camembert"></canvas>
+            </div>
+            <script>
+                var ctx = document.getElementById('Camembert').getContext('2d');
+                var myPieChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: <%=Data_equipe%>,
+                        datasets: [{
+                            label: 'Graphe De repartition des point',
+                            data: <%=Data_pt_equipe%>,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            </script>
             <div class="table-responsive p-3">
                 <label >Classement etape a <%= classementList.get(0).getLieu()%></label>
                 <table class="table align-items-center table-flush" id="dataTable">
                     <thead class="thead-light">
                     <tr>
                         <th>Equipe</th>
-                        <th>Temps</th>
+                        <th>Penalite</th>
                         <th>Point total</th>
                     </tr>
                     </thead>
@@ -154,7 +259,7 @@
                     <%for (Classement classement : classementList){%>
                     <tr>
                         <th><%= classement.getNomEquipe() %></th>
-                        <th><%= classement.getDiffTemps() %></th>
+                        <th><%= classement.getPenalite() %></th>
                         <th><%= classement.getPoint() %></th>
                     </tr>
                     <%}%>
@@ -195,6 +300,14 @@
     <script src="js/ruang-admin.min.js"></script>
     <script src="vendor/chart.js/Chart.min.js"></script>
     <script src="js/demo/chart-area-demo.js"></script>
+    <script>
+        function addPdf(id) {
+            var element = document.getElementById(id);
+            element.style.padding = '20px';
+            element.style.fontSize = "small";
+            html2pdf(element);
+        }
+    </script>
 </body>
 
 </html>

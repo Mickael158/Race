@@ -52,6 +52,7 @@
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Action</h6>
                     <a class="collapse-item" href="${pageContext.request.contextPath}/VoireEtape_a">Affectation temps</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Penalite">Penalite Equipe</a>
                 </div>
             </div>
         </li>
@@ -84,7 +85,6 @@
                 </div>
             </div>
         </li>
-
         <hr class="sidebar-divider">
         <div class="version" id="version-ruangadmin"></div>
     </ul>
@@ -153,7 +153,8 @@
                         <th>Place</th>
                         <th>Coureur</th>
                         <th>Equipe</th>
-                        <th>Temps</th>
+                        <th>Arriver</th>
+                        <th>Penalite</th>
                         <th>Point</th>
                     </tr>
                     </thead>
@@ -163,7 +164,8 @@
                         <th><%= classement.getPlace() %></th>
                         <th><%= classement.getNom() %></th>
                         <th><%= classement.getNomEquipe() %></th>
-                        <th><%= classement.getDiffTemps() %></th>
+                        <th><%= classement.getFin() %></th>
+                        <th><%= classement.getPenalite() %></th>
                         <th><%= classement.getPoint() %></th>
                     </tr>
                     <%}%>

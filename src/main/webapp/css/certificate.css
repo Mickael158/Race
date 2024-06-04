@@ -1,0 +1,85 @@
+#chart_div {
+    font-family: Arial, sans-serif;
+    background-color: #add8e6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.certificate {
+    background: white;
+    border: 5px solid #c8b04f;
+    border-radius: 10px;
+    padding: 20px;
+    width: 700px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    position: relative;
+}
+
+.header_certificate {
+    background-color: #1c3b72;
+    color: white;
+    padding: 10px 0;
+    border-radius: 10px 10px 0 0;
+}
+
+.header_certificate h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+.header_certificate h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.medal_certificate {
+    position: absolute;
+    right: 20px;
+}
+
+.medal_certificate img {
+    width: 100px;
+    height: 100px;
+}
+.medal_certificate1 {
+    position: absolute;
+}
+
+.medal_certificate1 img {
+    width: 100px;
+    height: 100px;
+}
+
+.content_certificate {
+    margin: 20px 0;
+}
+
+.content_certificate p {
+    font-size: 1.2em;
+}
+
+.content_certificate h3 {
+    font-size: 2em;
+    margin: 10px 0;
+    font-family: 'Brush Script MT', cursive;
+}
+
+.footer_certificate {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.footer_certificate .date, .footer_certificate .signature , .footer_certificate .stat {
+    border-top: 1px solid #000;
+    width: 45%;
+    text-align: center;
+}
+
+.footer_certificate p {
+    margin-top: 5px;
+}

@@ -1,3 +1,7 @@
+\c postgres;
+drop database race;
+create database race;
+\c race;
 CREATE TABLE UserAdmin(
     idUser SERIAL PRIMARY KEY ,
     nom VARCHAR,
@@ -29,7 +33,7 @@ CREATE TABLE genre(
   anotation VARCHAR
 );
 INSERT INTO genre (nom , anotation) VALUES
-    ('Homme' , 'H'),
+    ('Homme' , 'M'),
     ('Femme' , 'F');
 CREATE TABLE coureur(
     idCoureur SERIAL PRIMARY KEY ,
@@ -66,6 +70,12 @@ CREATE TABLE points(
   place int,
   point int
 );
+CREATE TABLE penalite(
+  idPenalite SERIAL PRIMARY KEY ,
+  idEtape int references etape(idEtape),
+  idEquipe int references equipe(idEquipe),
+  temps TIME
+);
 
 CREATE TABLE resultat_etape(
   idResultat SERIAL PRIMARY KEY ,
@@ -84,7 +94,6 @@ CREATE TABLE resultat_import(
     equipe VARCHAR,
     arriver TIMESTAMP
 );
-
 CREATE TABLE classement_etape(
     idClassement SERIAL PRIMARY KEY ,
     idresultat int references resultat_etape(idResultat),
@@ -94,75 +103,67 @@ CREATE TABLE classement_etape(
     idEtape int references etape(idEtape),
     debut timestamp,
     fin timestamp,
-    point int
+    point int,
+    penalite TIME,
+    tfinal timestamp
 );
 
-INSERT INTO equipe (nom,email, pswd) VALUES
-                                         ('EquipeA','equipe1@test.com', 'azerty1'),
-                                         ('EquipeB','equipe2@test.com', 'azerty2'),
-                                         ('EquipeC','equipe3@test.com', 'azerty3');
+select classement_etape.idClassement, coureur.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, classement_etape.idetape, etape.lieu, classement_etape.fin, classement_etape.debut, EXTRACT(EPOCH FROM (classement_etape.tfinal - classement_etape.debut)) AS time_difference , classement_etape.point , classement_etape.place , classement_etape.penalite
+    from classement_etape
+        join coureur on coureur.idCoureur=classement_etape.idCoureur
+        join equipe on equipe.idEquipe=coureur.idEquipe
+        join etape on etape.idEtape=classement_etape.idEtape
+        left join penalite on equipe.idEquipe = penalite.idEquipe and etape.idEtape = penalite.idEtape
+    where classement_etape.idEtape=4 and classement_etape.idCategorie=1
+    ORDER BY point DESC;
 
+SELECT
+        re.idResultat,
+        re.idCoureur,
+        coureur.nom,
+        equipe.idEquipe,
+        equipe.nom,
+        re.idetape,
+        re.fin,
+        e.depart,
+        EXTRACT(EPOCH FROM (re.fin - e.depart)) AS time_difference,
+        EXTRACT(EPOCH FROM (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval))) AS time_difference_final,
+        COALESCE(SUM(penalite.temps), '00:00:00'::interval) AS penalite_t,
+        (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval)) AS final_time_with_penalty
+    FROM  resultat_etape re
+        JOIN  etape e ON re.idetape = e.idEtape
+        JOIN  coureur ON coureur.idCoureur = re.idCoureur
+        JOIN  equipe ON equipe.idEquipe = coureur.idEquipe
+        LEFT JOIN  penalite ON penalite.idEquipe = equipe.idEquipe AND penalite.idEtape = e.idEtape
+    GROUP BY  re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe, re.idetape, e.depart
+    ORDER BY time_difference_final ASC;
 
-
-INSERT INTO coureur (numero, nom, dtn, idGenre, idEquipe) VALUES
-                                                              ('101', 'Jean Martin', '1990-05-15', 1, 1),
-                                                              ('102', 'Sophie Durand', '1992-08-10', 2, 1),
-                                                              ('103', 'Pierre Lefebvre', '1998-11-25', 1, 1),
-                                                              ('201', 'Marie Petit', '1993-06-14', 2, 2),
-                                                              ('202', 'Louis Robert', '1996-09-30', 1, 2),
-                                                              ('203', 'Emma Dubois', '1994-04-20', 2, 2),
-                                                              ('301', 'Thomas Moreau', '1991-03-28', 1, 3),
-                                                              ('302', 'Léa Garcia', '1995-12-03', 2, 3),
-                                                              ('303', 'Nicolas Fernandez', '1997-07-18', 1, 3),
-                                                              ('401', 'Alice Roux', '1993-09-05', 2, 1),
-                                                              ('402', 'Julien Bonnet', '1994-10-12', 1, 2),
-                                                              ('403', 'Camille Laurent', '1996-02-25', 2, 3);
-INSERT INTO coureurs_categories (idCoureur, idCategories) VALUES
-                                                              (1, 1),
-                                                              (2, 2),
-                                                              (3, 3),
-                                                              (4, 4),
-                                                              (5, 1),
-                                                              (6, 3),
-                                                              (7, 2),
-                                                              (8, 1),
-                                                              (9, 3),
-                                                              (10, 2),
-                                                              (11, 4),
-                                                              (12, 1);
-INSERT INTO etape (nbr_Coureur_Equipe, depart, lieu, longueur) VALUES
-                                                                   (8, '2024-06-01 08:00:00', 'Prologue', 5.0),
-                                                                   (6, '2024-06-02 09:00:00', 'Etape 1', 120.0),
-                                                                   (7, '2024-06-03 08:30:00', 'Etape 2', 180.0),
-                                                                   (5, '2024-06-04 09:00:00', 'Etape 3', 150.0);
-INSERT INTO points (place, point) VALUES
-                                      (1, 100),
-                                      (2, 95),
-                                      (3, 90),
-                                      (4, 85),
-                                      (5, 80),
-                                      (6, 75),
-                                      (7, 70),
-                                      (8, 65),
-                                      (9, 60),
-                                      (10, 55),
-                                      (11, 50),
-                                      (12, 45),
-                                      (13, 40),
-                                      (14, 35),
-                                      (15, 30),
-                                      (16, 25),
-                                      (17, 20),
-                                      (18, 15),
-                                      (19, 10),
-                                      (20, 5),
-                                      (21, 4),
-                                      (22, 3),
-                                      (23, 2),
-                                      (24, 1),
-                                      (25, 1),
-                                      (26, 1),
-                                      (27, 1),
-                                      (28, 1),
-                                      (29, 1),
-                                      (30, 1);
+SELECT
+    re.idResultat,
+    re.idCoureur,
+    coureur.nom,
+    equipe.idEquipe,
+    equipe.nom,
+    re.idetape,
+    re.fin,
+    e.depart,
+    CASE
+        WHEN re.fin IS NULL THEN NULL
+        ELSE EXTRACT(EPOCH FROM (re.fin - e.depart))
+        END AS time_difference,
+    CASE
+        WHEN re.fin IS NULL THEN NULL
+        ELSE EXTRACT(EPOCH FROM (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval)))
+        END AS time_difference_final,
+    COALESCE(SUM(penalite.temps), '00:00:00'::interval) AS penalite_t,
+    CASE
+        WHEN re.fin IS NULL THEN NULL
+        ELSE (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval))
+        END AS final_time_with_penalty
+FROM resultat_etape re
+         JOIN etape e ON re.idetape = e.idEtape
+         JOIN coureur ON coureur.idCoureur = re.idCoureur
+         JOIN equipe ON equipe.idEquipe = coureur.idEquipe
+         LEFT JOIN penalite ON penalite.idEquipe = equipe.idEquipe AND penalite.idEtape = e.idEtape
+GROUP BY re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe, re.idetape, e.depart
+ORDER BY time_difference_final ASC;

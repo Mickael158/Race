@@ -2,6 +2,7 @@ package Model;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class Classement extends Categorie{
@@ -16,6 +17,7 @@ public class Classement extends Categorie{
     private double diffTemps;
     private int point;
 
+    private Timestamp temps_final;
     public void delet_classement( Connection connection) throws SQLException, ClassNotFoundException {
         if (connection != null) {
             String insertQuery = "delete from classement_etape";
@@ -33,7 +35,7 @@ public class Classement extends Categorie{
     public List<Classement> classements_by_etape_by_categorie(int idEtape,int idCategorie, Connection connection) throws SQLException, ClassNotFoundException {
         List<Classement> classements = new ArrayList<>();
         if (connection != null) {
-            String selectQuery = "select classement_etape.idClassement, coureur.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, classement_etape.idetape, etape.lieu, classement_etape.fin, classement_etape.debut, EXTRACT(EPOCH FROM (classement_etape.fin - classement_etape.debut)) AS time_difference , classement_etape.point , classement_etape.place\n" +
+            String selectQuery = "select classement_etape.idClassement, coureur.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, classement_etape.idetape, etape.lieu, classement_etape.fin, classement_etape.debut, EXTRACT(EPOCH FROM (classement_etape.tfinal - classement_etape.debut)) AS time_difference , classement_etape.point , classement_etape.place , classement_etape.penalite\n" +
                     "    from classement_etape\n" +
                     "        join coureur on coureur.idCoureur=classement_etape.idCoureur\n" +
                     "        join equipe on equipe.idEquipe=coureur.idEquipe\n" +
@@ -60,6 +62,7 @@ public class Classement extends Categorie{
                     classement.setDiffTemps(resultSet.getDouble("time_difference"));
                     classement.setPoint(resultSet.getInt("point"));
                     classement.setPlace(resultSet.getInt("place"));
+                    classement.setPenalite(resultSet.getTime("penalite"));
                     classements.add(classement);
                 }
 
@@ -119,13 +122,27 @@ public class Classement extends Categorie{
     public List<Classement> classements_group_by_equipe_by_categorie(int idCategorie,  Connection connection) throws SQLException, ClassNotFoundException {
         List<Classement> classements = new ArrayList<>();
         if (connection != null) {
-            String selectQuery = "select equipe.idEquipe , equipe.nom,  SUM(classement_etape.point) as point , SUM(EXTRACT(EPOCH FROM (classement_etape.fin - classement_etape.debut)))AS time_difference\n" +
-                    "    from classement_etape\n" +
-                    "        join coureur on coureur.idCoureur=classement_etape.idCoureur\n" +
-                    "        join equipe on equipe.idEquipe=coureur.idEquipe\n" +
-                    "    where classement_etape.idCategorie=?\n" +
-                    "    Group By equipe.idEquipe\n" +
-                    "    Order By point DESC;";
+            String selectQuery = "SELECT\n" +
+                    "    equipe.idEquipe,\n" +
+                    "    equipe.nom,\n" +
+                    "    SUM(classement_etape.point) AS point,\n" +
+                    "    SUM(EXTRACT(EPOCH FROM (classement_etape.tfinal - classement_etape.debut))) AS time_difference,\n" +
+                    "    SUM(etape.longueur) AS sum_longueur,\n" +
+                    "    SUM(EXTRACT(EPOCH FROM classement_etape.penalite)) AS penalite\n" +
+                    "FROM\n" +
+                    "    classement_etape\n" +
+                    "        JOIN\n" +
+                    "    coureur ON coureur.idCoureur = classement_etape.idCoureur\n" +
+                    "        JOIN\n" +
+                    "    equipe ON equipe.idEquipe = coureur.idEquipe\n" +
+                    "        JOIN\n" +
+                    "    etape ON classement_etape.idEtape = etape.idEtape\n" +
+                    "WHERE\n" +
+                    "        classement_etape.idCategorie = ?\n" +
+                    "GROUP BY\n" +
+                    "    equipe.idEquipe\n" +
+                    "ORDER BY\n" +
+                    "    point DESC;";
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
                 preparedStatement.setInt(1, idCategorie);
@@ -136,7 +153,9 @@ public class Classement extends Categorie{
                     classement.setIdEquipe(resultSet.getInt("idequipe"));
                     classement.setNomEquipe(resultSet.getString("nom"));
                     classement.setPoint(resultSet.getInt("point"));
-                    classement.setDiffTemps(resultSet.getInt("time_difference"));
+                    classement.setLongueur(resultSet.getInt("sum_longueur"));
+                    classement.setDiffTemps(resultSet.getDouble("time_difference"));
+                    classement.setPenalite(Time.valueOf(secondesVersHeure(resultSet.getDouble("penalite"))));
                     classements.add(classement);
                 }
 
@@ -148,6 +167,13 @@ public class Classement extends Categorie{
             }
         }
         return classements;
+    }
+    public static String secondesVersHeure(double secondes) {
+        int heures = (int) (secondes / 3600);
+        int minutes = (int) ((secondes % 3600) / 60);
+        int secondesRestantes = (int) (secondes % 60);
+
+        return String.format("%02d:%02d:%02d", heures, minutes, secondesRestantes);
     }
 
     public List<Classement> classements_group_by_equipe_by_equipe_by_categorie(int idequipe,int idCategorie ,  Connection connection) throws SQLException, ClassNotFoundException {
@@ -188,14 +214,16 @@ public class Classement extends Categorie{
     public List<Classement> select_resultats_by_diff_temps_by_categorie(Connection connection) throws SQLException, ClassNotFoundException {
         List<Classement> classements = new ArrayList<>();
         if (connection != null) {
-            String selectQuery = "SELECT re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, re.idetape, re.fin, e.depart, EXTRACT(EPOCH FROM (re.fin - e.depart)) AS time_difference , coureurs_categories.idCategories , categories.nom\n" +
+            String selectQuery = "SELECT re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, re.idetape, re.fin, e.depart, EXTRACT(EPOCH FROM (re.fin - e.depart)) AS time_difference , coureurs_categories.idCategories , categories.nom , EXTRACT(EPOCH FROM (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval))) AS time_difference_final , COALESCE(SUM(penalite.temps), '00:00:00'::interval) AS penalite_t\n" +
                     "    FROM resultat_etape re\n" +
                     "        JOIN etape e ON re.idetape = e.idEtape\n" +
                     "        join coureur on coureur.idCoureur=re.idCoureur\n" +
                     "        join coureurs_categories on coureurs_categories.idCoureur = coureur.idCoureur\n" +
                     "        join categories on categories.idCategorie = coureurs_categories.idCategories\n" +
                     "        join equipe on equipe.idEquipe=coureur.idEquipe\n" +
-                    "    ORDER BY time_difference Asc ;";
+                    "        left join penalite on penalite.idEquipe=equipe.idEquipe and penalite.idEtape=e.idEtape\n" +
+                    "    GROUP BY re.idResultat, re.idCoureur, coureur.nom,equipe.idEquipe, re.idetape, e.depart , coureurs_categories.idCategories , categories.nom\n" +
+                    "    ORDER BY time_difference_final Asc ;";
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
                 ResultSet resultSet = preparedStatement.executeQuery();
@@ -213,6 +241,8 @@ public class Classement extends Categorie{
                     classement.setDiffTemps(resultSet.getDouble("time_difference"));
                     classement.setIdCategorie(resultSet.getInt("idCategories"));
                     classement.setNom_Categorie(resultSet.getString(11));
+                    classement.setTemps_final(addSecond(resultSet.getTimestamp("fin") , resultSet.getDouble("time_difference_final")));
+                    classement.setPenalite(resultSet.getTime("penalite_t"));
                     classements.add(classement);
                 }
 
@@ -225,15 +255,37 @@ public class Classement extends Categorie{
         }
         return classements;
     }
+
     public List<Classement> select_resultats_by_diff_temps_All_categorie(Connection connection) throws SQLException, ClassNotFoundException {
         List<Classement> classements = new ArrayList<>();
         if (connection != null) {
-            String selectQuery = "SELECT re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe , equipe.nom, re.idetape, re.fin, e.depart, EXTRACT(EPOCH FROM (re.fin - e.depart)) AS time_difference\n" +
-                    "    FROM resultat_etape re\n" +
-                    "        JOIN etape e ON re.idetape = e.idEtape\n" +
-                    "        join coureur on coureur.idCoureur=re.idCoureur\n" +
-                    "        join equipe on equipe.idEquipe=coureur.idEquipe\n" +
-                    "    ORDER BY time_difference Asc ;";
+            String selectQuery = "SELECT \n" +
+                    "    re.idResultat, \n" +
+                    "    re.idCoureur, \n" +
+                    "    coureur.nom, \n" +
+                    "    equipe.idEquipe, \n" +
+                    "    equipe.nom, \n" +
+                    "    re.idetape, \n" +
+                    "    re.fin, \n" +
+                    "    e.depart, \n" +
+                    "    EXTRACT(EPOCH FROM (re.fin - e.depart)) AS time_difference, \n" +
+                    "    EXTRACT(EPOCH FROM (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval))) AS time_difference_final, \n" +
+                    "    COALESCE(SUM(penalite.temps), '00:00:00'::interval) AS penalite_t,\n" +
+                    "    (re.fin + COALESCE(SUM(penalite.temps), '00:00:00'::interval)) AS final_time_with_penalty\n" +
+                    "FROM \n" +
+                    "    resultat_etape re\n" +
+                    "JOIN \n" +
+                    "    etape e ON re.idetape = e.idEtape\n" +
+                    "JOIN \n" +
+                    "    coureur ON coureur.idCoureur = re.idCoureur\n" +
+                    "JOIN \n" +
+                    "    equipe ON equipe.idEquipe = coureur.idEquipe\n" +
+                    "LEFT JOIN \n" +
+                    "    penalite ON penalite.idEquipe = equipe.idEquipe AND penalite.idEtape = e.idEtape\n" +
+                    "GROUP BY \n" +
+                    "    re.idResultat, re.idCoureur, coureur.nom, equipe.idEquipe, re.idetape, e.depart\n" +
+                    "ORDER BY \n" +
+                    "    time_difference_final ASC;\n";
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
                 ResultSet resultSet = preparedStatement.executeQuery();
@@ -249,6 +301,8 @@ public class Classement extends Categorie{
                     classement.setFin(resultSet.getTimestamp("fin"));
                     classement.setDebut(resultSet.getTimestamp("depart"));
                     classement.setDiffTemps(resultSet.getDouble("time_difference"));
+                    classement.setTemps_final(resultSet.getTimestamp("final_time_with_penalty"));
+                    classement.setPenalite(resultSet.getTime("penalite_t"));
                     classements.add(classement);
                 }
 
@@ -261,7 +315,18 @@ public class Classement extends Categorie{
         }
         return classements;
     }
+    public static Timestamp addSecond(Timestamp timestamp, double seconde) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timestamp.getTime());
 
+        // Convertir les secondes en millisecondes
+        long millisecondsToAdd = (long) (seconde * 1000);
+
+        // Ajouter les millisecondes au calendrier
+        calendar.add(Calendar.MILLISECOND, (int) millisecondsToAdd);
+
+        return new Timestamp(calendar.getTimeInMillis());
+    }
     public List<Classement> filtre_classements_by_etape(int idEtape ,Connection connection) throws SQLException, ClassNotFoundException {
         List<Classement> classementList = select_resultats_by_diff_temps_All_categorie(connection);
         List<Classement> classements = new ArrayList<>();
@@ -312,8 +377,8 @@ public class Classement extends Categorie{
     }
     public void insertClassement(Classement classement, Connection connection) throws SQLException, ClassNotFoundException {
         if (connection != null) {
-            String insertQuery = "insert into classement_etape ( idresultat, place,idCategorie, idCoureur, idEtape, debut, fin, point) VALUES\n" +
-                    "    (?,?,?,?,?,?,?,?)";
+            String insertQuery = "insert into classement_etape ( idresultat, place, idCategorie, idCoureur, idEtape, debut, fin, point, penalite, tfinal) VALUES \n" +
+                    "                            (?,?,?,?,?,?,?,?,?,?)";
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
                 preparedStatement.setInt(1, classement.getIdResultat());
@@ -324,6 +389,8 @@ public class Classement extends Categorie{
                 preparedStatement.setTimestamp(6, classement.getDebut());
                 preparedStatement.setTimestamp(7, classement.getFin());
                 preparedStatement.setInt(8, classement.getPoint());
+                preparedStatement.setTime(9, classement.getPenalite());
+                preparedStatement.setTimestamp(10, classement.getTemps_final());
 
                 preparedStatement.executeUpdate();
                 preparedStatement.close();
@@ -377,6 +444,14 @@ public class Classement extends Categorie{
         }
     }
 
+
+    public Timestamp getTemps_final() {
+        return temps_final;
+    }
+
+    public void setTemps_final(Timestamp temps_final) {
+        this.temps_final = temps_final;
+    }
 
     public double getDiffTemps() {
         return diffTemps;

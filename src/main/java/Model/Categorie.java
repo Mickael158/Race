@@ -80,6 +80,31 @@ public class Categorie extends Coureur {
         }
         return categories;
     }
+
+    public Categorie categorie_by_idCategori(int idCategorie , Connection connection) throws SQLException, ClassNotFoundException {
+        Categorie categorie = new Categorie();
+        if (connection != null) {
+            String selectQuery = "select * from categories where idCategorie=? ";
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
+                preparedStatement.setInt(1 , idCategorie);
+                ResultSet resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+
+                    categorie.setIdCategorie(resultSet.getInt("idcategorie"));
+                    categorie.setNom_Categorie(resultSet.getString("nom"));
+                }
+
+                resultSet.close();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.err.println("Erreur lors de l'exécution de la requête SELECT : " + e.getMessage());
+            }
+        }
+        return categorie;
+    }
     public void generet_AllCategorie_Coureur(Connection connection) throws SQLException, ClassNotFoundException {
         List<Categorie> categories = AllType_Coureur(connection);
         for (Categorie categorie : categories){
