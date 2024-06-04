@@ -1,12 +1,9 @@
-<%@ page import="java.util.List" %>
-<%@ page import="Model.*" %>
+<%@ page import="Model.Equipe" %>
+<%@ page import="Model.User" %>
 <!DOCTYPE html>
 <html lang="en">
 <%
-  Equipe equipe = (Equipe) request.getSession().getAttribute("equipe");
-  List<Equipe> equipes = (List<Equipe>) request.getAttribute("equipes");
-  List<Categorie> categories = (List<Categorie>) request.getAttribute("categories");
-  List<Classement> classementList = (List<Classement>) request.getAttribute("classements");
+  User user = (User) request.getSession().getAttribute("admin");
 %>
 
 <head>
@@ -51,7 +48,7 @@
       <div id="collapseBootstrap" class="collapse" aria-labelledby="headingBootstrap" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
           <h6 class="collapse-header">Action</h6>
-          <a class="collapse-item" href="${pageContext.request.contextPath}/VoireEtape_e">Affectation coureur</a>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/VoireEtape_a">Affectation temps</a>
         </div>
       </div>
     </li>
@@ -64,12 +61,26 @@
       <div id="collapseForm" class="collapse" aria-labelledby="headingForm" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
           <h6 class="collapse-header">Classement général</h6>
-          <a class="collapse-item" href="${pageContext.request.contextPath}/ClassementEtape_e">les points pour chaque étape</a>
-          <a class="collapse-item" href="${pageContext.request.contextPath}/ClassementEquipe_e"><%= equipe.getNomEquipe() %></a>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/ClassementEtape_a">les points pour chaque étape</a>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/ClassementEquipe_a">Par Equipe</a>
         </div>
       </div>
     </li>
-
+    <li class="nav-item">
+      <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseForm1" aria-expanded="true"
+         aria-controls="collapseForm">
+        <i class="fab fa-fw fa-wpforms"></i>
+        <span>Donnees</span>
+      </a>
+      <div id="collapseForm1" class="collapse" aria-labelledby="headingForm" data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          <h6 class="collapse-header">Import</h6>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/Import_etape_resultat">Etape / resultat</a>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/Import_Point">Point</a>
+          <a class="collapse-item" href="${pageContext.request.contextPath}/Reinitialisation">Reinitialisation</a>
+        </div>
+      </div>
+    </li>
     <hr class="sidebar-divider">
     <div class="version" id="version-ruangadmin"></div>
   </ul>
@@ -88,7 +99,7 @@
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                aria-haspopup="true" aria-expanded="false">
               <img class="img-profile rounded-circle" src="img/boy.png" style="max-width: 60px">
-              <span class="ml-2 d-none d-lg-inline text-white small"><%= equipe.getNomEquipe() %></span>
+              <span class="ml-2 d-none d-lg-inline text-white small"><%= user.getNom() %></span>
             </a>
           </li>
         </ul>
@@ -98,53 +109,20 @@
         <div class="col-lg-12">
           <center>
             <div class="card-body" >
-              <%if (equipes.size() != 0){%>
-              <form action="${pageContext.request.contextPath}/ClassementEquipe_e" method="post">
+              <form action="${pageContext.request.contextPath}/Import_etape_resultat" method="post">
                 <div class="form-group">
-                  <label >Classement par etape</label>
+                  <label >Faire les importations</label>
                   <div class="row row-cols-1 row-cols-md-2">
-                    <div class="col" style="width: 30%">
-                      <p>Categories : </p>
-                      <select class="form-control" style="text-align: center" name="idCategorie">
-                        <option class="form-control" style="text-align: center" value="0">Tous</option>
-                        <%for (Categorie categorie : categories){%>
-                        <option class="form-control" style="text-align: center" value="<%= categorie.getIdCategorie()%>"><%=categorie.getNom_Categorie()%></option>
-                        <%}%>
-                      </select>
-                    </div>
+                    <div class="col"><p>Etape : </p><input class="form-control" type="file" id="name-5" name="etape" accept=".csv"></div>
+                    <div class="col"><p>Resultat : </p><input class="form-control" type="file" id="name-7" name="resultat" accept=".csv"></div>
                   </div>
-                  <button type="submit" class="btn btn-primary" >Voire</button>
                 </div>
+                <div class="col"><button type="submit" class="btn btn-primary">Importer</button></div>
               </form>
-              <%}%>
             </div>
           </center>
         </div>
       </div>
-      <%if (classementList.size() != 0){%>
-      <div class="table-responsive p-3">
-        <label >Classement etape a <%= classementList.get(0).getLieu()%></label>
-        <table class="table align-items-center table-flush" id="dataTable">
-          <thead class="thead-light">
-          <tr>
-            <th>Equipe</th>
-            <th>Temps</th>
-            <th>Point total</th>
-          </tr>
-          </thead>
-          <tbody>
-          <%for (Classement classement : classementList){%>
-          <tr>
-            <th><%= classement.getNomEquipe() %></th>
-            <th><%= classement.getDiffTemps() %></th>
-            <th><%= classement.getPoint() %></th>
-          </tr>
-          <%}%>
-          </tbody>
-        </table>
-      </div>
-      <%}%>
-
       <!-- Footer -->
       <footer class="sticky-footer bg-white" style="text-align: end">
         <div class="container my-auto">

@@ -1,8 +1,12 @@
-<%@ page import="Model.Equipe" %>
+<%@ page import="java.util.List" %>
+<%@ page import="Model.*" %>
 <!DOCTYPE html>
 <html lang="en">
 <%
     Equipe equipe = (Equipe) request.getSession().getAttribute("equipe");
+    List<Etape> etapes = (List<Etape>) request.getAttribute("etapes");
+    List<Coureur> coureurs = (List<Coureur>) request.getAttribute("coureurs");
+    List<Resultat> resultats = (List<Resultat>) request.getAttribute("resultats");
 %>
 
 <head>
@@ -90,7 +94,55 @@
                 </ul>
             </nav>
             <!-- Topbar -->
-
+            <%if (etapes.size() != 0){
+                for (Etape etape : etapes){
+            %>
+            <div class="table-responsive p-3">
+                <label >Temps etape a <%= etape.getLieu()%></label>
+                <table class="table align-items-center table-flush" id="dataTable">
+                    <thead class="thead-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Temps chromo</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <%
+                        for (Resultat resultat : resultats){
+                            if (resultat.getIdEtape() == etape.getIdEtape()){
+                    %>
+                    <tr>
+                        <th><%= resultat.getNom() %></th>
+                        <th><%= resultat.getDiff() %></th>
+                        <%
+                            }
+                        }
+                        %>
+                    </tr>
+                    <%
+                        for (Coureur coureur : coureurs){
+                            if (coureur.getIdEtape() == etape.getIdEtape()){
+                    %>
+                    <tr>
+                        <th><%= coureur.getNom() %></th>
+                        <th>Null</th>
+                        <%
+                            }
+                        }
+                        %>
+                    </tr>
+                    </tbody>
+                </table>
+                <form action="${pageContext.request.contextPath}/VoireEtape_e" method="post">
+                    <input type="hidden" value="<%= etape.getIdEtape() %>" name="idEtape">
+                    <input type="hidden" value="<%= equipe.getIdEquipe()%>" name="idEquipe">
+                    <button type="submit" class="btn btn-primary" >Add</button>
+                </form>
+            </div>
+            <%
+                }
+            }
+            %>
             <!-- Footer -->
             <footer class="sticky-footer bg-white" style="text-align: end">
                 <div class="container my-auto">

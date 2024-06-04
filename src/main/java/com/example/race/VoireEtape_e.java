@@ -42,8 +42,8 @@ public class VoireEtape_e extends HttpServlet {
             ConnexionBDD connexionBDD = new ConnexionBDD();
             try {
                 Connection connection = connexionBDD.connect();
-                List<Coureur> coureurList_Non_Composer = coureur.coureurs_non_Composer_by_equipe(idEquipe , idEtape , connection);
-                List<Coureur> coureurList_Composer = coureur.coureurs_Composer_by_equipe(idEquipe , idEtape , connection);
+                List<Coureur> coureurList_Non_Composer = coureur.coureurs_non_Composer_by_equipe_by_Etape(idEquipe , idEtape , connection);
+                List<Coureur> coureurList_Composer = coureur.coureurs_Composer_by_equipe_by_Etape(idEquipe , idEtape , connection);
                 Etape etape = et.etape_byId(idEtape ,connection);
                 request.setAttribute("etape" , etape);
                 request.setAttribute("coureurList_Non_Composer" , coureurList_Non_Composer);

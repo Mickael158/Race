@@ -2,11 +2,13 @@
 <%@ page import="Model.User" %>
 <%@ page import="java.util.List" %>
 <%@ page import="Model.Classement" %>
+<%@ page import="Model.Categorie" %>
 <!DOCTYPE html>
 <html lang="en">
 <%
     User user = (User) request.getSession().getAttribute("admin");
     List<Equipe> equipes = (List<Equipe>) request.getAttribute("equipes");
+    List<Categorie> categories = (List<Categorie>) request.getAttribute("categories");
     List<Classement> classementList = (List<Classement>) request.getAttribute("classements");
 %>
 
@@ -70,6 +72,21 @@
                 </div>
             </div>
         </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseForm1" aria-expanded="true"
+               aria-controls="collapseForm">
+                <i class="fab fa-fw fa-wpforms"></i>
+                <span>Donnees</span>
+            </a>
+            <div id="collapseForm1" class="collapse" aria-labelledby="headingForm" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Import</h6>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Import_etape_resultat">Etape / resultat</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Import_Point">Point</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Reinitialisation">Reinitialisation</a>
+                </div>
+            </div>
+        </li>
 
         <hr class="sidebar-divider">
         <div class="version" id="version-ruangadmin"></div>
@@ -99,16 +116,17 @@
                 <div class="col-lg-12">
                     <center>
                         <div class="card-body" >
-                            <%if (equipes.size() != 0){%>
+                            <%if (equipes.size() != 0 && categories.size() != 0){%>
                             <form action="${pageContext.request.contextPath}/ClassementEquipe_a" method="post">
                                 <div class="form-group">
                                     <label >Classement par etape</label>
                                     <div class="row row-cols-1 row-cols-md-2">
                                         <div class="col" style="width: 30%">
-                                            <p>Lieu de l'Etape : </p>
-                                            <select class="form-control" style="text-align: center" name="idEquipe">
-                                                <%for (Equipe eq : equipes){%>
-                                                <option class="form-control" style="text-align: center" value="<%= eq.getIdEquipe()%>"><%=eq.getNomEquipe()%></option>
+                                            <p>Categories : </p>
+                                            <select class="form-control" style="text-align: center" name="idCategorie">
+                                                <option class="form-control" style="text-align: center" value="0">Tous</option>
+                                                <%for (Categorie categorie : categories){%>
+                                                <option class="form-control" style="text-align: center" value="<%= categorie.getIdCategorie()%>"><%=categorie.getNom_Categorie()%></option>
                                                 <%}%>
                                             </select>
                                         </div>

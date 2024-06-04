@@ -1,13 +1,11 @@
-<%@ page import="Model.Equipe" %>
-<%@ page import="Model.User" %>
-<%@ page import="Model.Etape" %>
 <%@ page import="java.util.List" %>
-<%@ page import="Model.Classement" %>
+<%@ page import="Model.*" %>
 <!DOCTYPE html>
 <html lang="en">
 <%
     User user = (User) request.getSession().getAttribute("admin");
     List<Etape> etapeList = (List<Etape>) request.getAttribute("etapeList");
+    List<Categorie> categories = (List<Categorie>) request.getAttribute("categories");
     List<Classement> classementList = (List<Classement>) request.getAttribute("classements");
 %>
 
@@ -71,6 +69,21 @@
                 </div>
             </div>
         </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseForm1" aria-expanded="true"
+               aria-controls="collapseForm">
+                <i class="fab fa-fw fa-wpforms"></i>
+                <span>Donnees</span>
+            </a>
+            <div id="collapseForm1" class="collapse" aria-labelledby="headingForm" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Import</h6>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Import_etape_resultat">Etape / resultat</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Import_Point">Point</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/Reinitialisation">Reinitialisation</a>
+                </div>
+            </div>
+        </li>
 
         <hr class="sidebar-divider">
         <div class="version" id="version-ruangadmin"></div>
@@ -113,6 +126,15 @@
                                                 <%}%>
                                             </select>
                                         </div>
+                                        <div class="col" style="width: 30%">
+                                            <p>Categories : </p>
+                                            <select class="form-control" style="text-align: center" name="idCategorie">
+                                                <option class="form-control" style="text-align: center" value="0">Tous</option>
+                                                <%for (Categorie categorie : categories){%>
+                                                <option class="form-control" style="text-align: center" value="<%= categorie.getIdCategorie()%>"><%=categorie.getNom_Categorie()%></option>
+                                                <%}%>
+                                            </select>
+                                        </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary" >Voire</button>
                                 </div>
@@ -128,6 +150,7 @@
                 <table class="table align-items-center table-flush" id="dataTable">
                     <thead class="thead-light">
                     <tr>
+                        <th>Place</th>
                         <th>Coureur</th>
                         <th>Equipe</th>
                         <th>Temps</th>
@@ -137,6 +160,7 @@
                     <tbody>
                     <%for (Classement classement : classementList){%>
                     <tr>
+                        <th><%= classement.getPlace() %></th>
                         <th><%= classement.getNom() %></th>
                         <th><%= classement.getNomEquipe() %></th>
                         <th><%= classement.getDiffTemps() %></th>

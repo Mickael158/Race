@@ -39,6 +39,20 @@ public class Equipe extends Etape{
         }
         return equipe;
     }
+    public void delet_Equipe( Connection connection) throws SQLException, ClassNotFoundException {
+        if (connection != null) {
+            String insertQuery = "delete from equipe";
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+                System.out.println("Equipe Ok");
+                preparedStatement.executeUpdate();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.err.println("Erreur lors de l'exécution de la requête INSERT : " + e.getMessage());
+            }
+        }
+    }
     public List<Equipe> AllEquipe(Connection connection) throws SQLException, ClassNotFoundException {
         List<Equipe> equipes = new ArrayList<>();
         if (connection != null) {

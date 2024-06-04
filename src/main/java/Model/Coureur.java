@@ -29,7 +29,35 @@ public class Coureur extends Genre{
             }
         }
     }
-    public List<Coureur> coureurs_non_Composer_by_equipe(int idEquipe,int idEtape, Connection connection) throws SQLException, ClassNotFoundException {
+    public void delet_Categories_coureur( Connection connection) throws SQLException, ClassNotFoundException {
+        if (connection != null) {
+            String insertQuery = "delete from coureurs_categories;";
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+                System.out.println("Categories Coureur Ok");
+                preparedStatement.executeUpdate();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.err.println("Erreur lors de l'exécution de la requête INSERT : " + e.getMessage());
+            }
+        }
+    }
+    public void delet_Coureur( Connection connection) throws SQLException, ClassNotFoundException {
+        if (connection != null) {
+            String insertQuery = "delete from coureur";
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+                System.out.println("Coureur Ok");
+                preparedStatement.executeUpdate();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.err.println("Erreur lors de l'exécution de la requête INSERT : " + e.getMessage());
+            }
+        }
+    }
+    public List<Coureur> coureurs_non_Composer_by_equipe_by_Etape(int idEquipe,int idEtape, Connection connection) throws SQLException, ClassNotFoundException {
         List<Coureur> coureurs = new ArrayList<>();
         if (connection != null) {
             String selectQuery = "select coureur.idCoureur , coureur.numero , coureur.nom , coureur.dtn , genre.nom , coureur.idEquipe\n" +
@@ -70,7 +98,7 @@ public class Coureur extends Genre{
         }
         return coureurs;
     }
-    public List<Coureur> coureurs_Composer_by_equipe(int idEquipe,int idEtape, Connection connection) throws SQLException, ClassNotFoundException {
+    public List<Coureur> coureurs_Composer_by_equipe_by_Etape(int idEquipe,int idEtape, Connection connection) throws SQLException, ClassNotFoundException {
         List<Coureur> coureurs = new ArrayList<>();
         if (connection != null) {
             String selectQuery = "select coureur.idCoureur , coureur.numero , coureur.nom , coureur.dtn , genre.nom , coureur.idEquipe\n" +
@@ -94,6 +122,42 @@ public class Coureur extends Genre{
                     coureur.setDtn(resultSet.getDate("dtn"));
                     coureur.setNomGenre(resultSet.getString(5));
                     coureur.setIdEquipe(resultSet.getInt("idequipe"));
+                    coureurs.add(coureur);
+                }
+
+                resultSet.close();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.err.println("Erreur lors de l'exécution de la requête SELECT : " + e.getMessage());
+            }
+        }
+        return coureurs;
+    }
+    public List<Coureur> coureurs_Composer_by_equipe(int idEquipe, Connection connection) throws SQLException, ClassNotFoundException {
+        List<Coureur> coureurs = new ArrayList<>();
+        if (connection != null) {
+            String selectQuery = "SELECT  c.idCoureur,  c.numero,  c.nom, c.dtn,  g.nom AS genre, c.idEquipe, ce.idEtape\n" +
+                    "FROM  Composition_etape ce\n" +
+                    "JOIN coureur c ON ce.idCoureur = c.idCoureur\n" +
+                    "JOIN  genre g ON c.idGenre = g.idGenre\n" +
+                    "JOIN  etape e ON ce.idEtape = e.idEtape\n" +
+                    "LEFT JOIN  resultat_etape re ON ce.idCoureur = re.idCoureur AND ce.idEtape = re.idEtape\n" +
+                    "WHERE  re.idResultat IS NULL AND ce.idEquipe = ?;\n";
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
+                preparedStatement.setInt(1 , idEquipe);
+                ResultSet resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+                    Coureur coureur = new Coureur();
+                    coureur.setIdCoureur(resultSet.getInt("idcoureur"));
+                    coureur.setNumero(resultSet.getString("numero"));
+                    coureur.setNom(resultSet.getString("nom"));
+                    coureur.setDtn(resultSet.getDate("dtn"));
+                    coureur.setNomGenre(resultSet.getString(5));
+                    coureur.setIdEquipe(resultSet.getInt("idequipe"));
+                    coureur.setIdEtape(resultSet.getInt("idetape"));
                     coureurs.add(coureur);
                 }
 

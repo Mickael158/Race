@@ -37,8 +37,8 @@ public class AddCoureur extends HttpServlet {
                     coureur.setIdEquipe(idEquipe);
                     Etape etape = et.etape_byId(idEtape ,connection);
                     List<Etape> etapes = et.AllEtape(connection);
-                    List<Coureur> coureurList_Composer = coureur.coureurs_Composer_by_equipe(idEquipe , idEtape , connection);
-                    List<Coureur> coureurList_Non_Composer = coureur.coureurs_non_Composer_by_equipe(idEquipe , idEtape , connection);
+                    List<Coureur> coureurList_Composer = coureur.coureurs_Composer_by_equipe_by_Etape(idEquipe , idEtape , connection);
+                    List<Coureur> coureurList_Non_Composer = coureur.coureurs_non_Composer_by_equipe_by_Etape(idEquipe , idEtape , connection);
                     if (coureurList_Composer.size()+idCoureur.length <= etape.getNbr_Coureur_Equipe()){
                         coureur.insertComposition_etape(coureur , connection);
                     }
@@ -50,7 +50,7 @@ public class AddCoureur extends HttpServlet {
             } catch (SQLException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-            request.getRequestDispatcher("voireEtape_e.jsp").forward(request, response);
         }
+        request.getRequestDispatcher("voireEtape_e.jsp").forward(request, response);
     }
 }
